@@ -2,27 +2,31 @@ import torch.optim as optim
 from torch import nn
 from torch.autograd import Variable
 from loaddata import load_data
-
+from mylenet import LeNet
+from myvgg import vgg16_bn
+from mysimplenet import Batch_Net
 import torch
+from tensorboardX import SummaryWriter
+import time
 
 def trainandsave():
 
     # 加载数据
-    root_path = "./data/cifar10_save"
+    root_path = "./data/cifar10"
     data_folder = "train"
-    batch_size = 8
+    batch_size = 64
     data_type = "train"
     trainloader = load_data(root_path, data_folder, batch_size, data_type)
     
     # 神经网络结构
     # 输入是32*32*3=3072维度, 中间层分别是1500, 200, 输出10个维度(10个分类)
-    # from mysimplenet import Batch_Net
+    
     # net = Batch_Net(32*32, 1500, 200, 10)
 
-    # from myvgg import vgg16_bn
+    
     # net = vgg16_bn()
 
-    from mylenet import LeNet
+
     net = LeNet()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -36,6 +40,7 @@ def trainandsave():
 
     # 训练部分
     print("trainloader = ", trainloader)
+    writer = SummaryWriter('runs/train2')  # 记录
     for epoch in range(250):    # 训练的数据量为5个epoch，每个epoch为一个循环
                            
         running_loss = 0.0  # 定义一个变量方便我们对loss进行输出
@@ -68,13 +73,16 @@ def trainandsave():
             #running_loss += loss.data[0]       # loss累加
             running_loss += loss.item()       # loss累加
             # 每个epoch要训练所有的图片，每训练完成200张便打印一下训练的效果（loss值）
-            if (i+1) % 200 == 0:                 
-                print('[%d, %5d] loss: %.3f' %
+            if (i+1) % 200 == 0:  
+                localtime = time.asctime( time.localtime(time.time()) )    
+                writer.add_scalar('running_loss', running_loss / 200, global_step=((epoch*600) + (i + 1)))                       
+                print(localtime, '[%d, %5d] loss: %.3f' %
                     (epoch + 1, i + 1, running_loss / 200))  # 然后再除以200，就得到这两百次的平均损失值
                 running_loss = 0.0  # 这一个200次结束后，就把running_loss归零，下一个200次继续使用
-            # 每十个epoch保存一次参数
-            save_name = "net_params"+str(epoch) + ".pkl"
-            torch.save(net.state_dict(), 'net_params.pkl')
+        # 每50个epoch保存一次参数
+        if (epoch+1) % 50 == 0:
+            save_name = "net_params"+str(epoch+1) + ".pkl"
+            torch.save(net.state_dict(), save_name)
 
     print('Finished Training')
     # 保存神经网络

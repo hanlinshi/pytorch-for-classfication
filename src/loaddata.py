@@ -17,7 +17,7 @@ def load_data(root_path, data_type, batch_size, phase):
 
     transform_dict = {
         'train': transforms.Compose(
-        [transforms.RandomResizedCrop(224),
+        [transforms.RandomResizedCrop(32),
          transforms.RandomHorizontalFlip(),
          transforms.ToTensor(),
          transforms.Normalize(mean=[0.485, 0.456, 0.406],

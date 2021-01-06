@@ -12,10 +12,10 @@ class VGG(nn.Module):
     def __init__(self, features, num_class=10):
         super().__init__()
         self.features = features
-
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Linear(512, 4096),   # 输入32*32
-            # nn.Linear(25088, 4096),  # 输入224*224
+            # nn.Linear(512, 4096),   # 输入32*32
+            nn.Linear(25088, 4096),  # 输入224*224
             nn.ReLU(inplace=True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
@@ -26,7 +26,10 @@ class VGG(nn.Module):
 
     def forward(self, x):
         output = self.features(x)
+        output = self.avgpool(output)
         output = output.view(output.size()[0], -1)
+        
+        # output = torch.flatten(output, 1)
         output = self.classifier(output)
 
         return output
